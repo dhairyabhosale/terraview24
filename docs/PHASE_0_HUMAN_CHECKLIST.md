@@ -219,7 +219,49 @@ I expect one active ruleset whose conditions name the default branch only.
 
 ---
 
-## Step 3. Vercel: GitHub App, project, env vars, host
+## Step 3. Vercel. DONE 2026-11-06, entirely from the CLI
+
+**Done by the agent.** No browser step was needed, which is a change from the first attempt. Evidence:
+
+| Item | Result |
+|---|---|
+| Scope | `db-workplace` ("Dhairya's Workplace") |
+| Project | `terraview24` created with `vercel project add` |
+| Root Directory | left empty, as required. The root `vercel.json` carries `installCommand`, `buildCommand` and `outputDirectory: web/dist` |
+| Env vars | `VITE_DATA_OWNER=dhairyabhosale` and `VITE_DATA_REPO=terraview24`, in Production, Preview and Development, added **before** the first production deploy. Values verified by `vercel env pull` as exact, with no stray whitespace |
+| Production deploy | `readyState: READY`, target production |
+| **Production host** | **`terraview24.vercel.app`, assigned with no suffix.** This is the authoritative name test from step 0, and it passed |
+| Git integration | `vercel git connect --yes` **succeeded**. The GitHub App was already installed account wide from earlier projects |
+
+### Two findings worth knowing
+
+**Vercel no longer allows a personal account as a deployment scope.** The Phase 0
+decision to prefer a personal Hobby scope over a team scope, taken specifically to avoid Deployment
+Protection, turned out not to be available: `vercel project ls --scope dhairyabhosale` returns
+"You cannot set your Personal Account as the scope." So the project lives in the team scope, and the
+Deployment Protection concern was checked by observation instead of avoided by design.
+
+**Deployment Protection does not block the production host.** Measured unauthenticated:
+
+| Host | Result |
+|---|---|
+| `terraview24.vercel.app` (production) | **`HTTP 200`**, serves the page |
+| `terraview24-db-workplace.vercel.app` (team alias) | `302` to `vercel.com/sso-api` |
+| `terraview24-dugovkzm6-db-workplace.vercel.app` (immutable) | `302` |
+
+This is exactly what `ARCHITECTURE.md` section 9 predicted. No setting needed changing, and the
+standing rule holds: **share only `terraview24.vercel.app`**, never an alias.
+
+### What you may want to confirm yourself
+
+Open `https://terraview24.vercel.app` in a private window. I verified it returns `HTTP 200` and serves
+the correct HTML and JavaScript bundle, but **I have not executed that JavaScript in a browser**, so I
+cannot confirm the page renders rather than throwing at runtime.
+
+---
+
+## Step 3 reference, if you ever need to do it by hand
+
 
 **3.1 Log in to the CLI.** Browser step, cannot be automated:
 
