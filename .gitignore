@@ -33,3 +33,10 @@ desktop.ini
 .env.*
 !.env.example
 # --- end vercel block ------------------------------------------------------
+
+# `vercel link` appends its own duplicate `.vercel` and `.env*` lines below
+# this point, with CRLF endings, every time it runs. Observed on 2026-11-06.
+# They are removed deliberately: the block above already covers both, and a
+# bare `.env*` placed after the `!.env.example` negation would silently
+# re-ignore the example file. If you see duplicates here, a `vercel link` has
+# run; delete them rather than leaving two sources of truth.
