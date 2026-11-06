@@ -1,0 +1,7 @@
+# Phase 0 CI only needs the test and lint tooling plus httpx. The heavy
+# scientific stack is not installed until a workflow actually uses it, because
+# every second of install time lands in the wall clock latency the page
+# publishes (ARCHITECTURE.md section 8).
+httpx==0.28.1
+pytest==8.3.4
+ruff==0.8.4

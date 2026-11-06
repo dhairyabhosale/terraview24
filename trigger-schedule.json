@@ -1,0 +1,86 @@
+{
+  "schedule_version": 1,
+  "comment": [
+    "Single source of truth for trigger cadence. Read by three consumers:",
+    "1. infra/trigger-worker/ decides which workflows are due and dispatches them.",
+    "2. pipeline/emit/heartbeat.py derives expected_cadence_minutes and stale_after_minutes.",
+    "3. tests/test_trigger_alignment.py asserts every entry here has a matching workflow file",
+    "   that declares workflow_dispatch with a source input.",
+    "Two copies of a cadence is a bug waiting to happen, so there is one copy, here.",
+    "",
+    "schedule_only_cadence_minutes is what GitHub's own scheduler actually delivers, not what",
+    "the cron expression asks for. Measured on attempt 1: 3.9 to 5.3 percent delivery for high",
+    "frequency crons, 4.68 hour median delay. See ARCHITECTURE.md section 1a. The page states",
+    "whichever cadence is actually armed, which is why both numbers live here."
+  ],
+  "schedule_only_cadence_minutes": 300,
+  "schedule_only_stale_after_minutes": 660,
+  "workflows": [
+    {
+      "file": "heartbeat.yml",
+      "name": "heartbeat",
+      "cron": "0 * * * *",
+      "cadence_minutes": 60,
+      "stale_after_minutes": 150,
+      "armed": true,
+      "gate_variable": null,
+      "writes_family": null,
+      "note": "Phase 0 proof, then the permanent freshness signal. Never gated: if this is off, the page cannot tell the difference between a stopped pipeline and a stopped heartbeat."
+    },
+    {
+      "file": "ingest-thermal.yml",
+      "name": "ingest-thermal",
+      "cron": "0 */6 * * *",
+      "cadence_minutes": 360,
+      "stale_after_minutes": 900,
+      "armed": false,
+      "gate_variable": "ENABLE_THERMAL",
+      "writes_family": "thermal",
+      "note": "FIRMS NOAA-20 primary, NOAA-21 and MODIS for corroboration."
+    },
+    {
+      "file": "ingest-weekly.yml",
+      "name": "ingest-weekly",
+      "cron": "0 4 * * 1",
+      "cadence_minutes": 10080,
+      "stale_after_minutes": 20160,
+      "armed": false,
+      "gate_variable": "ENABLE_FOREST_LOSS",
+      "writes_family": "forest_loss",
+      "note": "GLAD and RADD. Pin dataset versions explicitly, cadence is irregular."
+    },
+    {
+      "file": "ingest-atmospheric.yml",
+      "name": "ingest-atmospheric",
+      "cron": "0 1 * * *",
+      "cadence_minutes": 1440,
+      "stale_after_minutes": 2880,
+      "armed": false,
+      "gate_variable": "ENABLE_ATMOSPHERIC",
+      "writes_family": "atmospheric",
+      "note": "OpenAQ, plus Sentinel-5P via Planetary Computer later."
+    },
+    {
+      "file": "ingest-marine.yml",
+      "name": "ingest-marine",
+      "cron": "0 2 * * *",
+      "cadence_minutes": 1440,
+      "stale_after_minutes": 2880,
+      "armed": false,
+      "gate_variable": "ENABLE_MARINE",
+      "writes_family": "marine",
+      "note": "Global Fishing Watch. Cap request volume in code: a daily breach is a 24 hour block, a monthly breach is 30 days."
+    },
+    {
+      "file": "confirm.yml",
+      "name": "confirm",
+      "cron": "30 * * * *",
+      "cadence_minutes": 60,
+      "stale_after_minutes": 240,
+      "armed": false,
+      "gate_variable": "ENABLE_CONFIRM",
+      "writes_family": "confirmation",
+      "note": "GDELT bulk GKG with a local relevance filter. Its own workflow so a slow index can never delay detection. Honours GKG_READ_LAG_MINUTES."
+    }
+  ]
+}
