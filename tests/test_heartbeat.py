@@ -236,6 +236,70 @@ def test_dispatch_lag_is_measured_from_the_claimed_time_to_the_write(schedule):
     assert payload["dispatch_lag_seconds"] == 11
 
 
+def test_the_published_lag_is_reproducible_from_the_published_timestamps(schedule):
+    """Regression: the three dispatch fields must agree with each other.
+
+    The first real external timer write published dispatch_scheduled_for
+    14:00:21Z, written_at 14:00:40Z and dispatch_lag_seconds 20. Subtracting
+    the first from the second gives 19, not 20: written_at was truncated to
+    whole seconds for display while the lag was rounded from the full
+    precision value.
+
+    dispatch_lag_seconds is the one checkable number in this payload, the part
+    that is evidence rather than a claim, so a reader has to be able to
+    recompute it and get the same answer. This asserts that for a sub second
+    offset large enough to round the wrong way.
+    """
+    scheduled = dt.datetime(2026, 11, 6, 14, 0, 21, tzinfo=dt.UTC)
+    # 19.7 seconds later: truncates to :40, would naively round to 20.
+    written = dt.datetime(2026, 11, 6, 14, 0, 40, 700000, tzinfo=dt.UTC)
+
+    payload = build_heartbeat(
+        previous=None,
+        run_number=2,
+        written_at=written,
+        source_commit="a",
+        event_name="workflow_dispatch",
+        dispatch_source="external-timer",
+        dispatch_scheduled_for=scheduled,
+        schedule=schedule,
+        external_timer_armed=True,
+    )
+
+    published_written = dt.datetime.fromisoformat(
+        payload["written_at"].replace("Z", "+00:00")
+    )
+    published_scheduled = dt.datetime.fromisoformat(
+        payload["dispatch_scheduled_for"].replace("Z", "+00:00")
+    )
+    recomputed = int((published_written - published_scheduled).total_seconds())
+
+    assert payload["dispatch_lag_seconds"] == recomputed, (
+        f"published lag {payload['dispatch_lag_seconds']} cannot be recomputed from the "
+        f"published timestamps, which give {recomputed}"
+    )
+    assert payload["written_at"] == "2026-11-06T14:00:40Z"
+    assert payload["dispatch_lag_seconds"] == 19
+
+
+def test_sub_second_precision_never_leaks_into_the_payload(schedule):
+    """Microseconds in any timestamp would make the payload unparseable by the
+    page, which expects seconds, and unstable to diff on the data branch."""
+    written = dt.datetime(2026, 11, 6, 9, 0, 11, 987654, tzinfo=dt.UTC)
+    payload = build_heartbeat(
+        previous=None,
+        run_number=1,
+        written_at=written,
+        source_commit="a",
+        event_name="schedule",
+        dispatch_source=None,
+        dispatch_scheduled_for=None,
+        schedule=schedule,
+    )
+    assert payload["written_at"] == "2026-11-06T09:00:11Z"
+    assert "." not in payload["written_at"]
+
+
 def test_a_schedule_event_has_no_dispatch_lag(schedule):
     """GitHub does not tell us which minute it intended, so claiming a lag would
     be inventing a number."""

@@ -138,6 +138,20 @@ def build_heartbeat(
     if dispatch_scheduled_for is not None:
         _require_utc(dispatch_scheduled_for, "dispatch_scheduled_for")
 
+    # Truncate to whole seconds BEFORE anything is derived from it.
+    #
+    # Observed in the first external timer write: the payload published
+    # dispatch_scheduled_for 14:00:21Z, written_at 14:00:40Z and
+    # dispatch_lag_seconds 20. Those three cannot all be true. written_at was
+    # formatted by truncating microseconds while the lag was rounded from the
+    # full precision value, so 19.7 seconds displayed as 19 and reported as 20.
+    #
+    # dispatch_lag_seconds is the one checkable number in this payload, the
+    # part that is evidence rather than claim. A reader must be able to
+    # recompute it from the other published fields and get the same answer, so
+    # every derived value comes from the truncated timestamp.
+    written_at = written_at.replace(microsecond=0)
+
     trigger = classify_trigger(event_name, dispatch_source)
     counts = _carry_forward_counts(previous)
     counts[trigger] = counts.get(trigger, 0) + 1
