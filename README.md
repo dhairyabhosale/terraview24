@@ -140,16 +140,30 @@ reasoning behind both, including what was tried and rejected.
 
 ## Development
 
+**One command runs everything CI runs, at the versions CI uses:**
+
 ```bash
-# Python pipeline
+bash scripts/lint.sh
+```
+
+It exits 0 only when every check ran and passed. If a checker is missing it
+exits 2 and says which checks were skipped, because a partial run must not read
+like a full one. That distinction is not pedantry: see below.
+
+The individual pieces, if you need them:
+
+```bash
+# Python pipeline. CI pins Python 3.11 and ruff 0.8.4; match them or you are
+# running a different linter that happens to share a name.
 pip install -r requirements.txt
 python -m pytest tests/
-python -m ruff check pipeline/ scripts/ tests/
+uv tool run ruff@0.8.4 check pipeline/ scripts/ tests/
 
 # Workflow linting. A YAML parser is NOT a validator: a file that parsed
 # cleanly was rejected by GitHub Actions on every push, reporting only
 # "workflow file issue". actionlint catches that exact case.
 bash scripts/get-actionlint.sh
+bash scripts/get-shellcheck.sh     # NOT optional, see below
 ./tools/actionlint .github/workflows/*.yml
 
 # Ground rule: no en or em dashes anywhere
@@ -163,6 +177,22 @@ cd web && npm install && npm run build && npm test
 ```
 
 CI runs all of the above on every push touching the relevant paths.
+
+### Why `scripts/lint.sh` exists rather than a list of commands
+
+On 2026-11-06 the local checks passed and CI failed twice in the same run. Both
+failures were environment drift, and both reported "green" locally:
+
+- **ruff was a different linter.** Locally 0.17.4, in CI 0.8.4. The rule that
+  failed, `UP038`, exists in 0.8.4 and not in later versions.
+- **actionlint had silently skipped half its job.** It runs shellcheck over
+  `run:` blocks only when a shellcheck binary is on `PATH`, and when there is
+  none it skips those rules and still exits 0. The GitHub runner ships
+  shellcheck; a Windows development machine does not.
+
+A local check that is weaker than CI while reporting the same result is worse
+than no local check at all, because it manufactures confidence. `scripts/lint.sh`
+pins the versions and refuses to call a partial run a pass.
 
 ### Conventions worth knowing before your first commit
 

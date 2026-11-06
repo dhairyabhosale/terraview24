@@ -121,7 +121,7 @@ def test_unscorable_events_carry_null_sigma_not_zero(features):
         if p["baseline_quality"] in BASELINE_QUALITY_UNSCORABLE:
             assert p["sigma"] is None, p["event_id"]
         else:
-            assert isinstance(p["sigma"], (int, float)), p["event_id"]
+            assert isinstance(p["sigma"], int | float), p["event_id"]
             assert p["sigma"] is not None
 
 
