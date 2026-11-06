@@ -2,6 +2,7 @@
   "caveats": [
     "Baseline derived from 5 years of VIIRS NOAA-20 history, calendar years 2021 to 2025.",
     "Baseline is science quality data and the observation is near real time data, which differ slightly.",
+    "The anomaly score compares a trailing 28 day total against the same quantity in past years, so a short intense event is understated. Brief events are caught by absolute size and intensity floors instead.",
     "Confirmation is still pending: part of the news index window has not been published by the source yet."
   ],
   "classification": {
@@ -75,10 +76,12 @@
     "baseline_quality": "good",
     "baseline_std_log": 0.61,
     "baseline_version": "firms_noaa20_2021_2025",
+    "cells_intersected": 1,
     "detections_total": 212,
     "growth_rate_km2_per_day": 5.2,
     "observed_frp_sum": 1702.0,
     "pixel_count": 44,
+    "scored_cell": "8528347bfffffff",
     "sigma": 4.2,
     "sigma_capped": false,
     "sigma_floored": false,

@@ -310,6 +310,47 @@ def test_unscored_events_null_their_baseline_statistics(details):
             assert stats["baseline_std_log"] is None, event_id
 
 
+def test_scored_events_carry_the_28_day_dilution_caveat(details):
+    """D1 consequence, asserted so it cannot be quietly dropped.
+
+    The observed quantity is a trailing 28 day total, so a brief intense event
+    is averaged across four weeks of mostly nothing and scores lower than its
+    intensity suggests. That is a real limitation of the chosen unit, and the
+    panel has to say so. An unscored event has no sigma to qualify, so the
+    caveat would be meaningless there.
+    """
+    scored = [d for d in details.values() if d["statistics"]["sigma"] is not None]
+    assert scored, "no scored fixtures, so this test would pass vacuously"
+    for d in scored:
+        assert any("trailing 28 day total" in c for c in d["caveats"]), d["event_id"]
+        assert any("floors" in c for c in d["caveats"]), d["event_id"]
+
+
+def test_unscored_events_do_not_carry_the_dilution_caveat(details):
+    """A caveat about a score makes no sense on an event that has none."""
+    for event_id, d in details.items():
+        if d["statistics"]["sigma"] is None:
+            assert not any("trailing 28 day total" in c for c in d["caveats"]), event_id
+
+
+def test_multi_cell_events_say_which_cell_was_scored(details):
+    """Sigma scores the centroid cell, chosen by geometry so the choice cannot
+    see the score. Where a cluster spans several cells the panel must say the
+    score describes one of them, not the whole footprint."""
+    multi = [d for d in details.values() if d["statistics"]["cells_intersected"] > 1]
+    assert multi, "no multi cell fixture, so this test would pass vacuously"
+    for d in multi:
+        assert any("centroid" in c for c in d["caveats"]), d["event_id"]
+
+
+def test_the_scored_cell_is_the_current_cell_not_the_frozen_one(details):
+    """The event_id freezes the first detection cell; h3_r5_current tracks the
+    centroid. Scoring must use the current cell, or a spreading fire would be
+    scored against the norm of a cell it has left."""
+    for event_id, d in details.items():
+        assert d["statistics"]["scored_cell"] == d["location"]["h3_r5_current"], event_id
+
+
 def test_meta_claims_no_latency_until_one_is_measured():
     meta = json.loads((FIXTURES / "meta.json").read_text(encoding="utf-8"))
     assert meta["latency"]["measured"] is False

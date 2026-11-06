@@ -14,7 +14,38 @@ The anomaly baseline is **mandatory**. Without it this is a feed renderer with a
 
 All baselines and all aggregation use **H3 hexagonal cells at resolution 5** (roughly 250 sq km per cell). Hexagons avoid the area distortion of a lat/lon grid at high latitudes, which matters because boreal fire is a large part of the thermal signal.
 
-Every ingested record gets an `h3_r5` cell id at ingest time. Every baseline is keyed `(h3_r5, month)`. See the open issue in section 4 about the unit of comparison.
+Every ingested record gets an `h3_r5` cell id at ingest time. Every baseline is keyed
+**`(h3_r5, week_of_year)`**, and the quantity stored against each key is a **trailing 28 day total**.
+
+**Decision D1, taken 2026-11-06.** This replaces the earlier `(h3_r5, month)` keying. The observed
+value and the baseline are now the same quantity, so no proration is needed and the detector has no
+blind period. Full reasoning, including the two rejected options, in `DECISION_D1.md`.
+
+**Sigma is a property of the cell window, not of the cluster.** A cluster's own count and a cell's
+28 day total are different quantities, and the claim this project makes ("there is more burning here
+than there should be at this time of year") is a claim about a place and a season. Cluster size is
+carried separately by `severity`, `area_km2` and `pixel_count`, so nothing is lost. Two events in one
+hot cell share a sigma, and that is correct.
+
+### Which cell scores a cluster that spans several
+
+H3 r5 cells are roughly 253 sq km, so any large event covers several. The scoring cell is the one
+containing the cluster's **centroid**, which is the cell already published as `h3_r5_current`.
+
+The reason is selection bias, not convenience. **The cell must be chosen by a rule that cannot see the
+score.** Taking the maximum sigma across the intersected cells would inflate it systematically, since
+the maximum of several draws is biased upward and the bias grows with the number of cells, so the
+largest events would acquire the highest sigmas as an artifact of their size. Choosing the cell with
+the most detections is subtler but still biased, because detection count drives the numerator.
+A centroid is fixed by geometry alone and is blind to both the observed value and the norm.
+
+Aggregating across the intersected cells was also considered and rejected on arithmetic grounds: the
+stored statistics are means and standard deviations of `log1p` values, and `log1p(a + b)` is not
+`log1p(a) + log1p(b)`, so log space quantities cannot be summed across cells without rebuilding the
+baseline in linear space and losing the skew correction that motivated the transform.
+
+Record `cells_intersected` on every event, and where it exceeds 1, state in `caveats` that the score
+describes the centroid cell rather than the whole footprint.
 
 ---
 
@@ -35,16 +66,24 @@ NOAA-21 has 3.7 years and is a corroborating sensor only. MODIS Terra and Aqua a
 ### Procedure
 
 1. Pull the FIRMS NOAA-20 SP archive for calendar years 2021 to 2025 through the asynchronous archive download service. Manual, by design.
-2. Assign `h3_r5` and calendar month to every detection.
-3. Aggregate per `(cell, month, year)`:
+2. Assign `h3_r5` to every detection. **The week key belongs to the window end, not to the
+   detection**: a detection contributes to every trailing 28 day window that contains it, which is
+   28 of them. Do not assign each detection a single week.
+3. Aggregate per `(cell, week_of_year, year)` as a **trailing 28 day sum** ending in that week:
    - `detection_count`
    - `frp_sum`, `frp_mean`, `frp_p90`
-4. Apply `log1p` to the per year `detection_count` and `frp_sum` values. Across the 5 years, compute per `(cell, month)`:
+4. Apply `log1p` to the per year `detection_count` and `frp_sum` values. Across the 5 years, compute per `(cell, week_of_year)`:
    - `count_mean_log`, `count_std_log`
    - `frp_sum_mean_log`, `frp_sum_std_log`
-   - `years_observed` (how many of the 5 years had any detection)
-   - `detections_total` (all detections in this cell and month across the window)
-5. Grade `baseline_quality` per the table below and write Parquet keyed on `(h3_r5, month)`.
+   - `years_observed` (how many of the 5 years had any detection in this trailing window)
+   - `detections_total` (all detections across the five trailing 28 day windows for this key, so a
+     span of 140 days, not 152)
+5. Grade `baseline_quality` per the table below and write Parquet keyed on
+   `(h3_r5, week_of_year)`, **partitioned by `week_of_year`** (see the storage section below).
+
+**Note that adjacent week keys overlap.** Consecutive trailing 28 day windows share 21 of their 28
+days, so neighbouring keys are heavily correlated. That is harmless for scoring, but the file must not
+be read as 52 independent seasonal estimates: it is 52 overlapping views of the same year.
 
 ### Baseline quality
 
@@ -68,11 +107,82 @@ BASELINE_STD_LOG_FLOOR         = 0.25 # sets sigma_floored
 SIGMA_CAP                      = 10.0 # sets sigma_capped
 ```
 
-Rationale: 4 of 5 years is where a standard deviation over yearly aggregates stops being dominated by one outlier year. 20 detections is roughly 4 per year, enough that the log space variance comes from spread and not from presence or absence. The sparse tier keeps the original 3 year cutoff so earlier behaviour stays reachable and comparable.
+Rationale, rewritten for D1 on 2026-11-06. **The values did not change; their meaning did.**
+
+`years_observed` is unaffected: 4 of 5 years is still where a standard deviation over yearly
+aggregates stops being dominated by one outlier year.
+
+`detections_total` now spans **140 days** (five trailing 28 day windows) rather than the 152 days
+(five calendar months) it spanned before, which is 92 percent of the old span. So a threshold of 20
+is now an effective 18.4 on the old scale: **slightly stricter, which is the safe direction**, since
+it fails toward `insufficient`, meaning unscored and honestly labelled, rather than toward a
+confident number the data cannot support. The old wording, "roughly 4 per year" of a month, no longer
+describes what is being counted and has been removed rather than left beside an unchanged number,
+because the next reader would reasonably assume it had been checked.
+
+The sparse tier keeps the original 3 year cutoff so earlier behaviour stays reachable and comparable.
+
+**`BASELINE_STD_LOG_FLOOR` is provisional and must be re measured.** 0.25 was chosen against the
+spread of monthly aggregates. Overlapping 28 day windows are a different distribution, and because
+adjacent windows share 21 of 28 days the year to year variance at a fixed week may well be lower. The
+floor is the **denominator** of the sigma, so a floor set too high silently suppresses real anomalies,
+which is a failure that produces no error and no symptom. Measure the distribution of `std_log`
+across all graded cells in the Tier 0 notebook, choose the floor from it, and record both the
+distribution and the chosen value here. **Do not carry 0.25 across on the assumption that it
+transfers.**
 
 **Both the floor and the cap fail conservatively on purpose.** Substituting the floor understates a score. A capped sigma reported as "at least this extreme" is more honest than a precise figure the baseline cannot support.
 
 **A `std_log` of exactly zero must never reach the scoring path.** Grading assigns such a cell `insufficient`. If one arrives at scoring anyway, that is a grading bug: raise, do not paper over it. State this ruling in the code next to the constants as well as here.
+
+### Storage: partitioning, and what is deliberately not stored
+
+**GitHub rejects any single file over 100 MB** and warns above 50 MB. The baseline is committed to
+`main` as a Tier 0 input to CI, so this is a hard constraint and not a tidiness concern. Estimated
+sizes for `(h3_r5, week_of_year)` run from about 55 MB to about 109 MB depending on how many cells
+have any fire history, which straddles the limit. Two measures, both required.
+
+**1. Partition by `week_of_year`.**
+
+```
+pipeline/baselines/thermal_h3r5_week28d/
+    week_of_year=01/part.parquet
+    week_of_year=02/part.parquet
+    ...
+    week_of_year=52/part.parquet
+```
+
+Hive style, readable directly by `pyarrow.dataset`. Each shard lands around 1 to 2 MB, nowhere near
+any limit.
+
+Partitioning by week rather than by H3 base cell is chosen for a second reason that matters more at
+run time: **a scoring run needs only the week it is scoring**, so it loads one or two shards instead
+of the entire baseline. That turns a 109 MB read into roughly 2 MB on every run, which is runtime the
+page publishes as latency (`ARCHITECTURE.md` section 8).
+
+**2. Do not store rows that can never be scored.**
+
+Only `good` and `sparse` keys carry statistics. Most `(cell, week)` keys in the world are near empty
+and would otherwise dominate the file. To preserve the `insufficient` versus `unavailable` distinction
+without storing every empty key, keep a compact cell level set of every `h3_r5` that saw **any**
+detection in the window, as a single small file of one column.
+
+Grading then resolves as:
+
+| Lookup result | `baseline_quality` | Means |
+|---|---|---|
+| Key present with statistics | `good` or `sparse` | Scored |
+| Key absent, cell in the observed set | `insufficient` | This cell burns, but not enough in this week to support a variance estimate |
+| Key absent, cell not in the observed set | `unavailable` | Nothing has burned in this cell in 5 years |
+
+This is a **small, deliberate refinement** of the definitions in the table above, which distinguished
+the two by whether a row existed. The new distinction is arguably the more meaningful one, since a
+detection in a cell that has never burned is exactly the interesting case the `unavailable` tier was
+created to flag. Recorded here rather than applied silently.
+
+**Enforced, not just intended:** `scripts/check_baseline_sizes.py` fails CI if any file under
+`pipeline/baselines/` exceeds 40 MB, well below GitHub's limit, so the constraint is caught at commit
+time rather than at push time.
 
 ### The problems you will hit, and the fixes
 

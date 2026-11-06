@@ -486,12 +486,59 @@ and implemented now so that Phase 1 does not inherit a known trap.
 
 | Observation | Result |
 |---|---|
-| Pending run cancelled when a third dispatch arrives on one shared group | **Not yet measured** |
-| Per workflow groups: concurrent writes to `data` from two workflows | **Not yet measured** |
-| Rebase and retry push: conflicts observed, retries needed, jitter adequacy | **Not yet measured** |
+| Pending run cancelled when a third arrives on one group | **Measured 2026-11-06. CONFIRMED.** See below |
+| Per workflow groups: concurrent writes to `data` from two workflows | Unit tested against real git repositories. Not yet observed in production, because only one workflow is armed |
+| Rebase and retry push: conflicts, retries, jitter adequacy | Not yet measured in production. Every heartbeat push so far: `attempts=1 rebases=0 rejections=0` |
+| Worker and GitHub `schedule` firing for the same window | **Observed 2026-11-06, no collision.** See below |
 
 Record the numbers here when they exist, per ground rule 11. Do not record a reasoned expectation in
 this table as though it were an observation.
+
+#### The one pending slot claim, measured
+
+A throwaway workflow (`concurrency-probe.yml`, since deleted) held a group for 90 seconds while three
+`workflow_dispatch` calls were fired about 4 seconds apart.
+
+| Dispatch | Run id | Created | Outcome |
+|---|---|---|---|
+| 1 | 42242817493 | 15:24:53Z | `success`, ran 15:24:53 to 15:26:30 |
+| 2 | 42242828478 | 15:24:57Z | **`cancelled` at 15:25:05Z** |
+| 3 | 42242840220 | 15:25:02Z | queued, then ran after dispatch 1 finished |
+
+Dispatch 2 was cancelled **3 seconds after dispatch 3 was created**, having never executed. So the
+claim holds exactly: **a concurrency group holds at most one pending run, and a third arrival
+destroys the one already waiting.**
+
+Two consequences worth stating precisely, because the words matter:
+
+- **The loss is a drop, not a coalesce.** GitHub does not merge two triggers into one run that serves
+  both. Dispatch 2 did no work at all. For `heartbeat` that is harmless, since every write is a full
+  snapshot. For a Phase 1 ingest workflow it would be a **data gap**, and because every window keys
+  off data timestamps rather than run times, the next run would not automatically backfill it.
+- **This is why the single shared `data-branch-write` group was abandoned.** Under a 5 minute timer
+  with several armed workflows, drops would have been routine, and a dropped run is invisible from
+  inside the repository: it looks exactly like the scheduler flakiness measured in section 1a. The
+  per workflow design in this section is now supported by measurement rather than by reasoning.
+
+#### Worker and `schedule` firing for the same window
+
+On 2026-11-06 both triggers fired for the 14:00 heartbeat window. **They did not collide**, and the
+reason is worth recording so the absence of a problem is not mistaken for proof of safety:
+
+| Trigger | Run created | Run duration |
+|---|---|---|
+| Worker dispatch | 14:00:23Z | about 20 s |
+| GitHub `schedule` | **14:41:52Z** | about 20 s |
+
+41.9 minutes apart, so the group was never contended. Four triggers to date have produced four runs,
+with nothing dropped.
+
+**Residual exposure.** A collision needs `schedule` delivery to land within roughly one job duration
+of the Worker's slot. Heartbeat jobs last 20 to 30 seconds and `schedule` delivery is scattered over
+tens of minutes, so the probability is low now. It **rises in Phase 1**, where jobs run for minutes
+rather than seconds, widening the window for a collision on the same workflow. Re evaluate when the
+first family is armed, and note that the available mitigation (having a `schedule` triggered run
+stand down if a recent unassisted write already exists) is not yet implemented.
 
 ---
 

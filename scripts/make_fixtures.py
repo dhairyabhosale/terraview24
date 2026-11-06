@@ -318,13 +318,27 @@ def detail_for(props: dict, geometry: dict) -> dict:
                 "than the figure shown."
             )
 
+    if not unscored:
+        # D1: the observed quantity is a trailing 28 day total, so a brief
+        # intense event is averaged across four weeks of mostly nothing and
+        # scores lower than its intensity suggests. The absolute floors are
+        # what catch those, and saying so is the difference between an honest
+        # limitation and a silently blunt detector.
+        caveats.append(
+            "The anomaly score compares a trailing 28 day total against the same "
+            "quantity in past years, so a short intense event is understated. "
+            "Brief events are caught by absolute size and intensity floors instead."
+        )
+
     if degraded:
         caveats.append(
             "Independent cross sensor checking is not available for this event. "
             "Corroboration rests on repeated passes of one sensor family."
         )
     if quality == "sparse":
-        caveats.append("Baseline for this cell and month is sparse. Treat the score as indicative.")
+        caveats.append(
+            "Baseline for this cell and week is sparse. Treat the score as indicative."
+        )
 
     confirmation: dict
     if props["stage"] == "UNREPORTED":
@@ -373,6 +387,15 @@ def detail_for(props: dict, geometry: dict) -> dict:
             "published by the source yet."
         )
 
+    # Stated only when it is true. A cluster inside one cell needs no
+    # explanation; one spanning several does, because the published sigma
+    # describes the centroid cell and not the whole footprint.
+    if (3 if props["area_km2"] > 100 else 1) > 1:
+        caveats.append(
+            "This event spans several H3 cells. The anomaly score describes the cell "
+            "containing its centroid, not the whole footprint."
+        )
+
     return {
         "event_id": props["event_id"],
         "event_type": props["event_type"],
@@ -398,6 +421,11 @@ def detail_for(props: dict, geometry: dict) -> dict:
             "trend_slope": None if unscored else 0.04,
             "pixel_count": 44,
             "area_km2": props["area_km2"],
+            # How many H3 r5 cells the cluster footprint touches. Sigma scores
+            # the CENTROID cell only, so where this exceeds 1 the caveat below
+            # says the score describes one cell of several.
+            "cells_intersected": 3 if props["area_km2"] > 100 else 1,
+            "scored_cell": props["h3_r5_current"],
             "growth_rate_km2_per_day": 5.2 if props["is_active"] else 0.0,
         },
         "classification": {

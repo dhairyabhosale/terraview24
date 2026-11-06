@@ -18,6 +18,33 @@ workers_dev = false
 [triggers]
 crons = ["*/5 * * * *"]
 
+# Workers Logs. Without this, the Worker's dispatch log exists only while a
+# `wrangler tail` is attached, so "dispatched but never ran" is invisible
+# unless someone happens to be watching at the moment it happens. That exact
+# blindness was the hardest diagnosis of attempt 1, and the Worker already
+# logs every dispatch and every quiet tick specifically to resolve it. Logs
+# that nobody can read after the fact resolve nothing.
+#
+# head_sampling_rate 1 keeps every invocation. At one tick per 5 minutes that
+# is 288 a day, which is trivial against the free plan allowance, and sampling
+# a signal this sparse would defeat the purpose.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+# Toolchain pin, decided 2026-11-06.
+#
+# The live Worker was deployed by wrangler 4.158.0 while package.json pinned
+# 4.42.0. Resolved by pinning package.json FORWARD to 4.158.0 rather than
+# redeploying from 4.42.0, for two reasons:
+#
+#   1. The running artifact is verified. Its handlers, bindings and secret
+#      name were inspected, and it has dispatched successfully. Redeploying
+#      from an older toolchain would replace a verified artifact with an
+#      unverified one purely to satisfy a number in a file.
+#   2. 4.158.0 is also the current latest, so pinning forward is not pinning
+#      to something stale that will need undoing.
+
 [vars]
 GITHUB_OWNER = "dhairyabhosale"
 GITHUB_REPO = "terraview24"

@@ -103,6 +103,12 @@ jobs:
       - name: Lint Python
         run: python -m ruff check pipeline/ scripts/ tests/
 
+      - name: Check baseline file sizes
+        # GitHub rejects files over 100 MB. The Tier 0 baselines are committed
+        # by design, so the limit is caught here rather than by a rejected push
+        # after the work is done. See DETECTION_SPEC.md section 2, storage.
+        run: python scripts/check_baseline_sizes.py
+
   trigger-worker:
     # The 60 Worker tests had no CI job at all until 2026-11-06, because
     # infra/ was absent from the path filters above. The trigger layer is the
