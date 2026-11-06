@@ -1,0 +1,279 @@
+{
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          101.4523,
+          -1.8841
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 34.6,
+        "baseline_quality": "good",
+        "bbox": [
+          101.4229,
+          -1.9135,
+          101.4817,
+          -1.8547
+        ],
+        "corroboration_type": "independent_cross_sensor",
+        "event_id": "thm_8528347bfffffff_20261031",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-10-31T03:12:00Z",
+        "h3_r5_current": "8528347bfffffff",
+        "inside_protected_area": false,
+        "interactive": true,
+        "intersects_species_range": true,
+        "is_active": true,
+        "last_detected": "2026-11-05T02:44:00Z",
+        "severity": 0.78,
+        "sigma": 4.2,
+        "stage": "CORROBORATED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -62.1904,
+          -10.4412
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 8.2,
+        "baseline_quality": "unavailable",
+        "bbox": [
+          -62.2047,
+          -10.4555,
+          -62.1761,
+          -10.4269
+        ],
+        "corroboration_type": "single_sensor",
+        "event_id": "thm_851f8d4bfffffff_20261103",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-11-03T05:40:00Z",
+        "h3_r5_current": "851f8d4bfffffff",
+        "inside_protected_area": false,
+        "interactive": false,
+        "intersects_species_range": false,
+        "is_active": true,
+        "last_detected": "2026-11-05T05:51:00Z",
+        "severity": 0.41,
+        "sigma": null,
+        "stage": "SUSPECTED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          133.8812,
+          -23.698
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 5.1,
+        "baseline_quality": "insufficient",
+        "bbox": [
+          133.8699,
+          -23.7093,
+          133.8925,
+          -23.6867
+        ],
+        "corroboration_type": "single_sensor",
+        "event_id": "thm_8509a3b7fffffff_20261104",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-11-04T14:02:00Z",
+        "h3_r5_current": "8509a3b7fffffff",
+        "inside_protected_area": false,
+        "interactive": false,
+        "intersects_species_range": false,
+        "is_active": true,
+        "last_detected": "2026-11-05T13:55:00Z",
+        "severity": 0.33,
+        "sigma": null,
+        "stage": "SUSPECTED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          114.221,
+          -2.4455
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 212.4,
+        "baseline_quality": "good",
+        "bbox": [
+          114.1481,
+          -2.5184,
+          114.2939,
+          -2.3726
+        ],
+        "corroboration_type": "independent_cross_sensor",
+        "event_id": "thm_8528340ffffffff_20261028",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-10-28T02:10:00Z",
+        "h3_r5_current": "8528341bfffffff",
+        "inside_protected_area": false,
+        "interactive": true,
+        "intersects_species_range": true,
+        "is_active": true,
+        "last_detected": "2026-11-05T03:02:00Z",
+        "severity": 0.91,
+        "sigma": 6.8,
+        "stage": "CONFIRMED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          -55.0132,
+          -6.7741
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 47.9,
+        "baseline_quality": "sparse",
+        "bbox": [
+          -55.0478,
+          -6.8087,
+          -54.9786,
+          -6.7395
+        ],
+        "corroboration_type": "adjacent_layer",
+        "event_id": "fls_8667b1a3fffffff_20261012",
+        "event_type": "deforestation",
+        "family": "forest_loss",
+        "first_detected": "2026-10-12T00:00:00Z",
+        "h3_r5_current": "8667b1b7fffffff",
+        "inside_protected_area": true,
+        "interactive": true,
+        "intersects_species_range": false,
+        "is_active": true,
+        "last_detected": "2026-11-02T00:00:00Z",
+        "severity": 0.64,
+        "sigma": 3.7,
+        "stage": "CORROBORATED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          72.9104,
+          19.076
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 2.3,
+        "baseline_quality": "good",
+        "bbox": [
+          72.9028,
+          19.0684,
+          72.918,
+          19.0836
+        ],
+        "corroboration_type": "adjacent_layer",
+        "event_id": "thm_85283447fffffff_20261105",
+        "event_type": "industrial_thermal",
+        "family": "thermal",
+        "first_detected": "2026-11-05T16:20:00Z",
+        "h3_r5_current": "85283447fffffff",
+        "inside_protected_area": false,
+        "interactive": true,
+        "intersects_species_range": false,
+        "is_active": true,
+        "last_detected": "2026-11-05T22:41:00Z",
+        "severity": 0.88,
+        "sigma": 10.0,
+        "stage": "CORROBORATED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          25.4102,
+          60.1699
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 12.7,
+        "baseline_quality": "sparse",
+        "bbox": [
+          25.3924,
+          60.1521,
+          25.428,
+          60.1877
+        ],
+        "corroboration_type": "same_plane_persistence",
+        "event_id": "thm_8510b64bfffffff_20261101",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-11-01T11:30:00Z",
+        "h3_r5_current": "8510b64bfffffff",
+        "inside_protected_area": false,
+        "interactive": true,
+        "intersects_species_range": false,
+        "is_active": true,
+        "last_detected": "2026-11-04T12:10:00Z",
+        "severity": 0.55,
+        "sigma": 3.4,
+        "stage": "CORROBORATED"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          113.65,
+          62.54
+        ],
+        "type": "Point"
+      },
+      "properties": {
+        "area_km2": 96.3,
+        "baseline_quality": "good",
+        "bbox": [
+          113.6009,
+          62.4909,
+          113.6991,
+          62.5891
+        ],
+        "corroboration_type": "independent_cross_sensor",
+        "event_id": "thm_8598b39bfffffff_20261020",
+        "event_type": "forest_fire",
+        "family": "thermal",
+        "first_detected": "2026-10-20T04:15:00Z",
+        "h3_r5_current": "8598b39bfffffff",
+        "inside_protected_area": false,
+        "interactive": true,
+        "intersects_species_range": false,
+        "is_active": false,
+        "last_detected": "2026-10-29T05:02:00Z",
+        "severity": 0.72,
+        "sigma": 5.1,
+        "stage": "UNREPORTED"
+      },
+      "type": "Feature"
+    }
+  ],
+  "generated_at": "2026-11-06T06:00:00Z",
+  "pipeline_version": "0.1.0",
+  "type": "FeatureCollection"
+}

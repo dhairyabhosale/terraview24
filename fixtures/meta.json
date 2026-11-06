@@ -1,0 +1,42 @@
+{
+  "baseline_version": "firms_noaa20_2021_2025",
+  "corroboration_mode": "degraded",
+  "counts": {
+    "by_stage": {
+      "CONFIRMED": 1,
+      "CORROBORATED": 4,
+      "SUSPECTED": 2,
+      "UNREPORTED": 1
+    },
+    "shown": 8,
+    "total_active": 7412
+  },
+  "generated_at": "2026-11-06T06:00:00Z",
+  "latency": {
+    "measured": false,
+    "note": "No latency is claimed until one has been measured.",
+    "observation_to_publish_minutes_p50": null
+  },
+  "pipeline_version": "0.1.0",
+  "runs": {
+    "atmospheric": {
+      "data_as_of": "2026-11-04T22:00:00Z",
+      "expected_cadence_minutes": 1440,
+      "last_success": "2026-11-05T01:00:00Z",
+      "note": "OpenAQ timeout, partial",
+      "status": "degraded"
+    },
+    "forest_loss": {
+      "data_as_of": "2026-11-01T00:00:00Z",
+      "expected_cadence_minutes": 10080,
+      "last_success": "2026-11-03T04:00:00Z",
+      "status": "ok"
+    },
+    "thermal": {
+      "data_as_of": "2026-11-06T04:48:00Z",
+      "expected_cadence_minutes": 360,
+      "last_success": "2026-11-06T06:00:00Z",
+      "status": "ok"
+    }
+  }
+}

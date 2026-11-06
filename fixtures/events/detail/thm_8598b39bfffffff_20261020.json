@@ -1,0 +1,98 @@
+{
+  "caveats": [
+    "Baseline derived from 5 years of VIIRS NOAA-20 history, calendar years 2021 to 2025.",
+    "Baseline is science quality data and the observation is near real time data, which differ slightly.",
+    "No matching coverage was found by this query strategy in this index. That is not the same as no coverage existing anywhere."
+  ],
+  "classification": {
+    "alternatives": [
+      {
+        "class": "crop_residue_burning",
+        "confidence": 0.07
+      }
+    ],
+    "confidence": 0.91,
+    "predicted_class": "forest_fire"
+  },
+  "confirmation": {
+    "articles": [],
+    "index_coverage_fraction": 0.97,
+    "pending_slices_in_window": 0,
+    "query_strategy": "gkg_bulk_local_filter",
+    "query_strategy_version": 1,
+    "state": "unreported",
+    "window_closes": "2026-10-27T04:15:00Z"
+  },
+  "context": {
+    "inside_protected_area": false,
+    "intersecting_species_ranges": [],
+    "landcover": "tropical_moist_forest",
+    "nearest_protected_area": {
+      "distance_km": 18,
+      "name": "Unnamed reserve"
+    }
+  },
+  "corroboration": {
+    "adjacent_layer_agreement": [],
+    "corroboration_degraded": false,
+    "corroboration_type": "independent_cross_sensor",
+    "pass_count": 4,
+    "sensors": [
+      "VIIRS_NOAA20",
+      "MODIS_TERRA"
+    ]
+  },
+  "event_id": "thm_8598b39bfffffff_20261020",
+  "event_type": "forest_fire",
+  "headline_claim": "Sustained anomalous thermal activity, 5.1 sigma above the regional November norm, corroborated by an independent sensor.",
+  "location": {
+    "admin": {
+      "country": "Unknown",
+      "region": "Unknown"
+    },
+    "bbox": [
+      113.6009,
+      62.4909,
+      113.6991,
+      62.5891
+    ],
+    "centroid": [
+      113.65,
+      62.54
+    ],
+    "h3_r5_current": "8598b39bfffffff"
+  },
+  "stage": "UNREPORTED",
+  "statistics": {
+    "area_km2": 96.3,
+    "baseline_mean_log": 5.35,
+    "baseline_quality": "good",
+    "baseline_std_log": 0.61,
+    "baseline_version": "firms_noaa20_2021_2025",
+    "detections_total": 212,
+    "growth_rate_km2_per_day": 0.0,
+    "observed_frp_sum": 1981.0,
+    "pixel_count": 44,
+    "sigma": 5.1,
+    "sigma_capped": false,
+    "sigma_floored": false,
+    "trend_slope": 0.04,
+    "years_observed": 5
+  },
+  "timeline": [
+    {
+      "frp_sum": 180.1,
+      "pixel_count": 44,
+      "sensor": "VIIRS_NOAA20",
+      "stage_after": "SUSPECTED",
+      "timestamp": "2026-10-20T04:15:00Z"
+    },
+    {
+      "frp_sum": 240.7,
+      "pixel_count": 61,
+      "sensor": "VIIRS_NOAA20",
+      "stage_after": "UNREPORTED",
+      "timestamp": "2026-10-29T05:02:00Z"
+    }
+  ]
+}

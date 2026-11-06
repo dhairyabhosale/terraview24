@@ -1,0 +1,110 @@
+{
+  "caveats": [
+    "Baseline derived from 5 years of VIIRS NOAA-20 history, calendar years 2021 to 2025.",
+    "Baseline is science quality data and the observation is near real time data, which differ slightly."
+  ],
+  "classification": {
+    "alternatives": [
+      {
+        "class": "crop_residue_burning",
+        "confidence": 0.07
+      }
+    ],
+    "confidence": 0.91,
+    "predicted_class": "forest_fire"
+  },
+  "confirmation": {
+    "articles": [
+      {
+        "published_at": "2026-10-30T09:12:00Z",
+        "source": "example-wire.invalid",
+        "title": "Peat fires spread across Central Kalimantan",
+        "url": "https://example-wire.invalid/kalimantan-peat-fires"
+      }
+    ],
+    "index_coverage_fraction": 1.0,
+    "pending_slices_in_window": 0,
+    "query_strategy": "gkg_bulk_local_filter",
+    "query_strategy_version": 1,
+    "state": "confirmed",
+    "window_closes": "2026-11-04T02:10:00Z"
+  },
+  "context": {
+    "inside_protected_area": false,
+    "intersecting_species_ranges": [
+      {
+        "common_name": "Tiger",
+        "red_list_category": "EN",
+        "scientific_name": "Panthera tigris"
+      }
+    ],
+    "landcover": "tropical_moist_forest",
+    "nearest_protected_area": {
+      "distance_km": 18,
+      "name": "Unnamed reserve"
+    }
+  },
+  "corroboration": {
+    "adjacent_layer_agreement": [],
+    "corroboration_degraded": false,
+    "corroboration_type": "independent_cross_sensor",
+    "pass_count": 4,
+    "sensors": [
+      "VIIRS_NOAA20",
+      "MODIS_TERRA"
+    ]
+  },
+  "event_id": "thm_8528340ffffffff_20261028",
+  "event_type": "forest_fire",
+  "headline_claim": "Sustained anomalous thermal activity, 6.8 sigma above the regional November norm, corroborated by an independent sensor.",
+  "location": {
+    "admin": {
+      "country": "Unknown",
+      "region": "Unknown"
+    },
+    "bbox": [
+      114.1481,
+      -2.5184,
+      114.2939,
+      -2.3726
+    ],
+    "centroid": [
+      114.221,
+      -2.4455
+    ],
+    "h3_r5_current": "8528341bfffffff"
+  },
+  "stage": "CONFIRMED",
+  "statistics": {
+    "area_km2": 212.4,
+    "baseline_mean_log": 5.35,
+    "baseline_quality": "good",
+    "baseline_std_log": 0.61,
+    "baseline_version": "firms_noaa20_2021_2025",
+    "detections_total": 212,
+    "growth_rate_km2_per_day": 5.2,
+    "observed_frp_sum": 2508.0,
+    "pixel_count": 44,
+    "sigma": 6.8,
+    "sigma_capped": false,
+    "sigma_floored": false,
+    "trend_slope": 0.04,
+    "years_observed": 5
+  },
+  "timeline": [
+    {
+      "frp_sum": 180.1,
+      "pixel_count": 44,
+      "sensor": "VIIRS_NOAA20",
+      "stage_after": "SUSPECTED",
+      "timestamp": "2026-10-28T02:10:00Z"
+    },
+    {
+      "frp_sum": 240.7,
+      "pixel_count": 61,
+      "sensor": "VIIRS_NOAA20",
+      "stage_after": "CONFIRMED",
+      "timestamp": "2026-11-05T03:02:00Z"
+    }
+  ]
+}
