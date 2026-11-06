@@ -1,0 +1,19 @@
+{
+  "dispatch_lag_seconds": null,
+  "dispatch_scheduled_for": null,
+  "dispatch_source": "manual",
+  "expected_cadence_minutes": 300,
+  "first_unassisted_write": null,
+  "last_unassisted_write": null,
+  "run_number": 1,
+  "source_commit": "9584dd4ff32c",
+  "stale_after_minutes": 660,
+  "trigger_mode": "schedule_only",
+  "triggered_by": "workflow_dispatch",
+  "writes_by_trigger": {
+    "external_timer": 0,
+    "manual": 1,
+    "schedule": 0
+  },
+  "written_at": "2026-11-06T13:17:22Z"
+}
