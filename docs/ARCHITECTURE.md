@@ -80,6 +80,84 @@ GitHub's `schedule` event is best effort. It was measured against a control acco
 
 **The lesson that cost hours:** a quiet 90 minute observation window meant nothing against a 4.7 hour median. Any scheduler diagnosis uses a **time based** stopping rule: do not call it a fault before roughly 10 hours of silence, which is past the worst observed delay. Do not change one cron expression after another hoping for a different result.
 
+### Re measured on this project, 2026-11-06
+
+The attempt 1 table above was measured with hand issued `repository_dispatch` calls on a different
+repository. These are the production path: a Cloudflare Worker calling `workflow_dispatch` against
+`terraview24`.
+
+#### Cloudflare's cron slot is a fixed offset, not a delay
+
+`event.scheduledTime` was **exactly 21.240 seconds past every 5 minute boundary**, identical to the
+millisecond across every tick observed in two separate capture sessions. It is therefore neither the
+nominal cron minute nor a jittery execution time: it is **the slot Cloudflare assigned this Worker**,
+almost certainly a load spreading hash so that not every `*/5` Worker on the platform fires at once.
+
+The actual invocation follows the slot closely. From one fully instrumented tick:
+
+| | Epoch ms | UTC | Delta |
+|---|---|---|---|
+| `event.scheduledTime` (assigned slot) | 1793975721240 | 14:35:21.240 | reference |
+| `eventTimestamp` (actual invocation) | 1793975721988 | 14:35:21.988 | **+748 ms** |
+
+So **the 21 seconds is scheduling, not lateness**, and Cloudflare's own invocation delay is under a
+second. The practical consequence: the heartbeat genuinely fires at `HH:00:21`, not `HH:00:00`, and
+`dispatch_scheduled_for` is a stable reference point rather than a noisy one, which is what makes the
+lag below worth publishing.
+
+#### Dispatch lag, three samples
+
+| Sample | Assigned slot | Run `created_at` | **Slot to `created_at`** | POST duration | `written_at` | Slot to write |
+|---|---|---|---|---|---|---|
+| 1 | 14:00:21.240Z | 14:00:23Z | **1.76 s** | not captured | 14:00:40Z | 18.8 s |
+| 2 | 15:00:21.240Z | 15:00:23Z | **1.76 s** | 1601 ms | 15:00:29Z | 7.8 s |
+| 3 | 16:00:21.240Z | 16:00:23Z | **1.76 s** | 1659 ms | 16:00:31Z | 9.8 s |
+
+`run_started_at` equalled `created_at` on all three, reproducing the attempt 1 finding that GitHub
+creates the run late rather than queueing it: there is no runner queue to shorten.
+
+**Precision.** `created_at` has one second resolution, so each figure carries +0 / -1 s of
+uncertainty. The three identical values are a consequence of that resolution, not implausible
+precision: the true lag is somewhere in 0.8 to 1.8 s each time.
+
+**POST to `created_at`, which is the comparable number.** The POST is issued about 0.75 s after the
+slot and takes about 1.6 s, and GitHub records `created_at` partway through it. So:
+
+```
+POST issued      slot + 0.75 s
+created_at       slot + 1.76 s (+0 / -1 s)
+POST to created  about 1.0 s, bounded by 0.0 to 2.0 s
+```
+
+**Against the attempt 1 `repository_dispatch` figures of 2.4 s, 3.8 s and 2.9 s: this is the same
+order and, if anything, slightly faster.** The design choice of `workflow_dispatch` over
+`repository_dispatch`, taken for the narrower token scope, **costs nothing in latency.** That was an
+assumption when the decision was made and it is now measured.
+
+**Slot to write is a different quantity and must not be compared to the above.** It spans checkout of
+two refs, a Python install, the payload build and a push. The 18.8 s of sample 1 against 7.8 s and
+9.8 s is cache warmth, not a trend: sample 1 was the first run under a new commit and had no
+`setup-python` cache. Two samples with different cache states measure nothing, so this is reported as
+a range of roughly 8 to 19 s, not as an improvement.
+
+#### GitHub `schedule` on this repository: one sample
+
+| Observation | Result |
+|---|---|
+| Cron window | `0 * * * *`, the 14:00 window |
+| Run created | **14:41:52Z** |
+| Delay | **41.9 minutes** |
+
+**This is one sample and must not be read as a rate.** It is the first `schedule` delivery ever
+observed on this repository. It is far better than the 4.68 hour median measured against the control
+account over 68.5 days, and far better than the 3.9 to 5.3 percent delivery measured on attempt 1's
+project, but a single observation cannot distinguish a genuinely healthier repository from a lucky
+draw on a long tailed distribution. The design conclusion is unchanged: `schedule` remains a fallback,
+and the time based stopping rule of roughly 10 hours before calling a fault still applies.
+
+What it does establish is that **the fallback path works at all on this repository**, which was
+previously untested.
+
 ### The design
 
 An external timer calls `workflow_dispatch`, which is the path measured as fast. GitHub `schedule` stays in every workflow as a fallback, because a late run beats no run.
