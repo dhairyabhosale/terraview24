@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Local tooling (actionlint is downloaded by scripts/, never committed)
+tools/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- vercel, keep as ONE block ---------------------------------------------
+# `vercel link` appends its own .vercel and .env* lines to this file every
+# time it runs, and it can write them with CRLF endings. Keeping these two
+# entries together as a single commented block means a second `vercel link`
+# produces a visible duplicate that is obvious in review, instead of
+# silently stacking another copy somewhere else in the file.
+# `.env.local` holds a VERCEL_OIDC_TOKEN. It must never be committed.
+# See ARCHITECTURE.md section 8.
+.vercel
+.env
+.env.*
+!.env.example
+# --- end vercel block ------------------------------------------------------

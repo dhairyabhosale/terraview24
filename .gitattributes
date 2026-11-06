@@ -1,0 +1,37 @@
+# Line endings: LF everywhere, enforced from the first commit.
+#
+# Why this file exists and is committed first: a CRLF line ending inside a
+# workflow file breaks bash heredocs on the runner. Bash compares the
+# terminator against "PY\r", never finds the end of the heredoc, and the job
+# fails opaquely on a machine you cannot inspect. See ARCHITECTURE.md
+# section 9. The developer machine is Windows, so this is not theoretical.
+
+# Default: treat everything as text and normalise to LF in the repo and in
+# the working tree.
+* text=auto eol=lf
+
+# Files where LF is not merely preferred but load bearing.
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sh    text eol=lf
+*.py    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
+
+# Binary: never touch these.
+*.parquet binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.zip     binary
+*.woff    binary
+*.woff2   binary
+
+# Jupyter notebooks are JSON but diff badly. Keep LF, do not try to merge.
+*.ipynb text eol=lf -merge
