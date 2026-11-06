@@ -53,10 +53,14 @@ The agent cannot do these. It lists them up front, with exact instructions, as o
 
 1. Confirm the name is free (step 0 above) and create the empty public GitHub repo under `dhairyabhosale`.
 2. **Branch protection on `main` first**, before any token exists: Settings, Rules, Rulesets. Block force pushes, require linear history, and target `main` only.
-2a. **Grant `gh` the `workflow` scope**, which this list originally omitted:
-   `gh auth refresh -h github.com -s workflow`. An OAuth token without it is refused when a push
-   creates or updates any file under `.github/workflows/`, so the scaffold cannot be pushed at all.
-   Discovered on 2026-11-06 by reading the token's scopes before the first push rather than after it.
+2a. **Push `main` before `data`.** On an **empty** repository GitHub makes the first branch pushed
+   the default branch. `data` was pushed first, per the rule in 0b that it must exist before any
+   workflow runs, and GitHub duly made `data` the default. The `main` ruleset targets
+   `~DEFAULT_BRANCH`, so it silently moved with it: `data` became protected and `main` became
+   unprotected, which is the exact inverse of the intent. Fixed with
+   `gh api --method PATCH /repos/OWNER/REPO -f default_branch=main`, then verified per branch with
+   `gh api /repos/OWNER/REPO/rules/branches/main`. Either push `main` first, or set the default
+   branch explicitly straight after the first push. Measured 2026-11-06.
 3. Vercel: install the Vercel GitHub App for this repo only (Project Settings, Git), and set `VITE_DATA_OWNER` and `VITE_DATA_REPO` environment variables. Deployment Protection may put sign in pages on team aliases, so share only the production host.
 4. Create the fine grained token: this repo only, **Actions: write**, 90 day expiry. Put the expiry date in a calendar before leaving the page.
 5. Cloudflare account (free). From `infra/trigger-worker/`: `wrangler login`, `wrangler secret put GITHUB_TOKEN`, `wrangler deploy`. Confirm the output shows the cron trigger and no `workers.dev` address.

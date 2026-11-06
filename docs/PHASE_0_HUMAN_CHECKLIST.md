@@ -78,28 +78,21 @@ https://github.com/dhairyabhosale/terraview24
 
 ---
 
-## Step 1a. Grant `gh` the `workflow` scope. NEEDED FROM YOU
+## Step 1a. The `workflow` scope. NOT NEEDED, correction
 
-This step was missing from the original `ROADMAP.md` list. It was found by reading the token's scopes
-before attempting the first push rather than after it.
+I previously said you would need to run `gh auth refresh -h github.com -s workflow`, on the grounds
+that the authenticated token carries only `gist, read:org, repo` and GitHub refuses pushes from an
+OAuth token that touch `.github/workflows/`.
 
-The authenticated token carries `gist, read:org, repo`. **It does not carry `workflow`.** GitHub
-refuses any push from an OAuth token that creates or updates a file under `.github/workflows/`, so
-without this scope the entire scaffold cannot be pushed, and the failure arrives as a rejected push
-rather than as anything resembling a permissions screen.
+**That was wrong, and the push proved it.** All seven workflow files pushed successfully with the
+existing scopes. The scope restriction applies to the OAuth token itself, and `git push` over HTTPS
+here authenticates through Git Credential Manager rather than through the `gh` OAuth token, so the
+restriction never applied. **Nothing is required from you for this step.** It is kept rather than
+deleted because the reasoning was plausible, and a later reader is better served by knowing it was
+tested and found not to apply than by finding no trace of it.
 
-```bash
-gh auth refresh -h github.com -s workflow
-```
-
-It opens a browser and asks you to authorize the additional scope. Then confirm:
-
-```bash
-gh auth status
-curl -s -D - -o /dev/null -H "Authorization: token $(gh auth token)" https://api.github.com/user | grep -i x-oauth-scopes
-```
-
-I expect `workflow` to appear in the scope list. Tell me when it does and I will push.
+The lesson is the general one from ground rule 12: the prediction was sound and still wrong, and
+attempting the push cost less than reasoning about it.
 
 ---
 
