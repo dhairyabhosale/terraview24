@@ -15,6 +15,17 @@ dist/
 # Local tooling (actionlint is downloaded by scripts/, never committed)
 tools/
 
+# Raw source archives. These are hundreds of MB and must never be committed.
+# The FIRMS archives currently live a directory ABOVE the repo root, which git
+# cannot see at any depth and is a stronger guarantee than this rule. This
+# exists so that if anyone ever puts raw data inside the working tree, the
+# ignore is already in place rather than added one commit too late. A 346 MB
+# zip committed by accident cannot be removed from history without a force
+# push, and the main ruleset blocks those.
+raw/
+*.zip
+!fixtures/**/*.zip
+
 # OS
 Thumbs.db
 desktop.ini

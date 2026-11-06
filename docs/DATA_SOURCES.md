@@ -69,9 +69,75 @@ Two findings changed the plan: the Suomi NPP cessation (Family A sensor and base
   ```
   Area accepts a bounding box as `west,south,east,north`, or the literal `world`. It does **not** accept named `north=` / `south=` parameters. Maximum extent is `-180,-90,180,90`.
 - **Rate limit [documented]:** 5000 transactions per 10 minute interval per MAP_KEY. A multi day request counts as multiple transactions, roughly one per day of data requested. NASA raises the limit case by case on request.
-- **DAY_RANGE [unresolved]:** the API page states a valid range of 1 to 5 in its parameter table and then gives a worked example using 7. Confirm the real ceiling with a key in hand before building the ingest loop around it. Assume 5 until proven otherwise.
+- **DAY_RANGE [RESOLVED 2026-11-06, verified with a key]: the ceiling is 5.** Measured by probing
+  1 to 10 against a live key. `1` to `5` return `HTTP 200`; **`6` and above return `HTTP 400` with
+  the body `Invalid day range. Expects [1..5].`** The worked example using 7 on the API page is
+  simply wrong, and the parameter table is right. `DAY_RANGE=N` returns exactly N days ending today:
+
+  | DAY_RANGE | Status | Rows (test bbox) | Dates returned |
+  |---|---|---|---|
+  | 1 | 200 | 1,057 | 1 day |
+  | 2 | 200 | 4,136 | 2 days |
+  | 3 | 200 | 6,573 | 3 days |
+  | 4 | 200 | 10,032 | 4 days |
+  | 5 | 200 | 12,801 | 5 days |
+  | 6 to 10 | **400** | n/a | `Invalid day range. Expects [1..5].` |
+
+  Build the ingest loop around 5, and remember a multi day request counts as roughly one
+  transaction per day against the 5000 per 10 minute limit.
 - **Behaviour without a key [verified]:** `HTTP 400`, body `Invalid MAP_KEY.`
-- **Key fields:** `latitude`, `longitude`, `bright_ti4`, `bright_ti5`, `frp` (fire radiative power), `scan`, `track`, `acq_date`, `acq_time`, `satellite`, `confidence`, `daynight`.
+- **Key fields, and a schema difference that will break naive ingest [verified 2026-11-06]:**
+  **the API and the archive do not use the same column names**, and the archive carries an extra
+  column. Both were read directly, from a live API call and from a delivered 2021 archive.
+
+  | Index | API (NRT) | Archive (SP) | Same quantity? |
+  |---|---|---|---|
+  | 0, 1 | `latitude`, `longitude` | same | yes |
+  | 2 | **`bright_ti4`** | **`brightness`** | yes, positionally identical |
+  | 3 to 10 | `scan`, `track`, `acq_date`, `acq_time`, `satellite`, `instrument`, `confidence`, `version` | same | yes |
+  | 11 | **`bright_ti5`** | **`bright_t31`** | yes, positionally identical |
+  | 12, 13 | `frp`, `daynight` | same | yes |
+  | 14 | *absent* | **`type`** | **archive only** |
+
+  The archive borrows MODIS channel names (`brightness` is MODIS channel 21/22, `bright_t31` is
+  channel 31) for what are really the VIIRS I4 and I5 bands. The columns are positionally identical
+  for the first 14 fields, so normalisation is a rename map, not a reshape. **Normalise at ingest
+  and never let either spelling reach the detection code.**
+
+  **`type` is archive only, and that asymmetry matters.** Values are `0` presumed vegetation fire,
+  `1` active volcano, `2` other static land source, `3` offshore. NASA documents it as a standard
+  quality attribute, and the live NRT feed does not carry it. So **do not filter the baseline by
+  `type`**: a baseline filtered on a field the live feed lacks would be a different population from
+  the thing scored against it. Use `type` as a label source instead, not as a filter.
+
+#### `[verified 2026-11-06]` NOAA-20 standard quality data DOES exist, and the readme is wrong
+
+The FIRMS archive `Readme.txt` states, flatly:
+
+> PLEASE NOTE the standard quality data is not yet available from FIRMS for NOAA-20 and NOAA-21
+
+**That is stale, and the entire Tier 0 baseline depended on it being so.** Measured by live API
+request on 2026-11-06:
+
+| Source | Date requested | Result | `version` returned |
+|---|---|---|---|
+| `VIIRS_NOAA20_SP` | **2021-07-01** | **`200`, rows returned** | **`2`** |
+| `VIIRS_NOAA20_NRT` | 2021-07-01 | `200`, **0 rows** | n/a |
+| `VIIRS_NOAA20_SP` | today | `200`, 0 rows | n/a, expected: SP lags about 3 months |
+| `VIIRS_NOAA20_NRT` | today | `200`, rows returned | `2.0NRT` |
+| `MODIS_NRT` | today | `200`, rows returned | `6.1NRT` |
+
+NASA defines the `version` field as collection plus processing source, where a **suffix** means real
+time (`URT`, `RT`, `NRT`) and a **bare collection number means Standard Processing**. So `2` is
+Collection 2 Standard and `2.0NRT` is Collection 2 near real time.
+
+**The delivered 2021 archive carries `version = "2"` on 100 percent of its 20,157,242 rows**, which
+matches the SP API response exactly. The archive is science quality. The decision to build the
+baseline on NOAA-20 SP for 2021 to 2025 stands, and is now verified rather than assumed.
+
+Treat the readme's note as out of date. It is worth re reading if a future request returns a file
+named `fire_nrt_J1V-C2_*` rather than `fire_archive_J1V-C2_*`, which would indicate the window
+crossed into the NRT period.
 
 #### CRITICAL: Suomi NPP ceased three days before this verification [verified]
 
