@@ -28,7 +28,14 @@ SCHEDULE_PATH = REPO_ROOT / "trigger-schedule.json"
 # Workflows that are not part of the pipeline and are never dispatched by the
 # timer. Listed explicitly so a new pipeline workflow cannot be quietly
 # exempted from the checks below by forgetting to register it.
-NON_PIPELINE_WORKFLOWS = {"lint-workflows.yml"}
+NON_PIPELINE_WORKFLOWS = {
+    "lint-workflows.yml",
+    # Temporary measurement workflow for ARCHITECTURE section 9a. It is not
+    # part of the pipeline, the timer never fires it, and it is deleted once
+    # the result is recorded. Exempted explicitly rather than by loosening
+    # the check, so forgetting to delete it is visible here.
+    "concurrency-probe.yml",
+}
 
 PINNED_RUNNER = "ubuntu-24.04"
 PINNED_CHECKOUT = "actions/checkout@v5"
