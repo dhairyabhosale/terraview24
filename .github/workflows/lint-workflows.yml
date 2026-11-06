@@ -20,6 +20,8 @@ on:
       - "scripts/**"
       - "pipeline/**"
       - "tests/**"
+      - "infra/**"
+      - "web/**"
       - "trigger-schedule.json"
       - "requirements*.txt"
   pull_request:
@@ -28,6 +30,8 @@ on:
       - "scripts/**"
       - "pipeline/**"
       - "tests/**"
+      - "infra/**"
+      - "web/**"
       - "trigger-schedule.json"
       - "requirements*.txt"
   workflow_dispatch:
@@ -98,6 +102,59 @@ jobs:
 
       - name: Lint Python
         run: python -m ruff check pipeline/ scripts/ tests/
+
+  trigger-worker:
+    # The 60 Worker tests had no CI job at all until 2026-11-06, because
+    # infra/ was absent from the path filters above. The trigger layer is the
+    # riskiest component in the project: when it breaks, the symptom is a
+    # slightly stale page rather than a failure, which is the hardest kind of
+    # fault to notice. It needs a gate more than anything else here.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Run Worker tests
+        # No network and no credentials. Node runs the TypeScript directly by
+        # type stripping, so there is no build step and no dependency install.
+        working-directory: infra/trigger-worker
+        run: node --test "test/*.test.ts"
+
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm --prefix web ci
+
+      - name: Run web tests
+        working-directory: web
+        run: node --test "test/*.test.ts"
+
+      - name: Build
+        # Runs tsc AND vite build. tsc catches config errors that vite build
+        # passes over: it caught a missing @types/node that vite accepted.
+        run: npm --prefix web run build
 
   no-dashes:
     runs-on: ubuntu-24.04
