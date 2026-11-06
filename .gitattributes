@@ -1,0 +1,9 @@
+# LF for every payload on this branch.
+#
+# The pipeline writes JSON from a Linux runner and the frontend reads it over
+# the CDN, so endings would normally never matter. They matter here because a
+# developer on Windows may clone this branch to inspect a payload, and a
+# round trip through a CRLF working tree would rewrite every file in the next
+# commit, producing a diff of thousands of lines with no content change.
+* text=auto eol=lf
+*.json text eol=lf
