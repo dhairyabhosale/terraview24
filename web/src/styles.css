@@ -1,0 +1,164 @@
+/* Phase 0 styling: readable, honest, unglamorous. The visual design work
+   belongs with the globe in Phase 1, and dressing up a status page now would
+   be effort spent on the wrong thing. */
+
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --pass: #3fb950;
+  --warn: #d29922;
+  --accent: #58a6ff;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.page {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 1.75rem 0 0.5rem;
+}
+
+section,
+footer {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.phase-note p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.verdict h2 {
+  margin-top: 0;
+  color: inherit;
+}
+
+.verdict.pass {
+  border-left: 4px solid var(--pass);
+}
+
+.verdict.pass h2 {
+  color: var(--pass);
+}
+
+.verdict.pending {
+  border-left: 4px solid var(--muted);
+}
+
+.warning {
+  border-left: 4px solid var(--warn);
+}
+
+.warning h2 {
+  color: var(--warn);
+  margin-top: 0;
+}
+
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.25rem;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.figure-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.figure-value {
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.figure-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+footer ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+footer li + li {
+  margin-top: 0.5rem;
+}
+
+time {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "terraview24-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static frontend. Fetches data branch JSON at runtime, never at build time.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "node --test \"test/*.test.ts\""
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.2",
+    "vite": "6.0.5"
+  }
+}
