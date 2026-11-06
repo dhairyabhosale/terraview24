@@ -1,0 +1,90 @@
+name: heartbeat
+
+# The Phase 0 proof, and afterwards the permanent freshness signal.
+#
+# Never gated behind PIPELINE_ENABLED. If the heartbeat can be switched off,
+# the page cannot tell a stopped pipeline from a stopped heartbeat, and the
+# staleness message becomes meaningless.
+#
+# Two triggers, deliberately:
+#   workflow_dispatch  the fast path, called by infra/trigger-worker
+#   schedule           the slow fallback. Measured at 3.9 to 5.3 percent
+#                      delivery for high frequency crons with a 4.68 hour
+#                      median delay, so this is a safety net and not a
+#                      cadence. See ARCHITECTURE.md section 1a.
+#
+# The cron below must match trigger-schedule.json, which is the single source
+# of truth for cadence. tests/test_trigger_alignment.py asserts that.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Who dispatched this. A claim, not a proof: GitHub cannot tell the Worker from a person running curl."
+        required: false
+        default: manual
+        type: string
+      scheduled_for:
+        description: "ISO 8601 UTC time the dispatcher says it fired. The checkable half of the claim."
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "0 * * * *"
+
+# One group per workflow, keyed by workflow name, NOT one shared group across
+# every writing workflow. A concurrency group holds at most one pending run, so
+# a third arrival cancels the queued one. A shared group under a 5 minute timer
+# would silently drop dispatches, and a dropped dispatch looks exactly like the
+# scheduler flakiness measured in section 1a. See ARCHITECTURE.md section 9a.
+concurrency:
+  group: heartbeat-write
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  write-heartbeat:
+    # Pinned, not ubuntu-latest: that label began migrating to Ubuntu 26 on
+    # 2026-10-19, and a scoring pipeline whose OS image moves underneath it is
+    # not reproducible. Review this pin before 24.04 leaves support.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Check out the data branch
+        uses: actions/checkout@v5
+        with:
+          # This step fails if `data` does not exist, which is why the orphan
+          # branch is pushed before any workflow first runs.
+          ref: data
+          path: data-branch
+          # Full history: the push rebases onto origin/data, and a rebase on a
+          # shallow clone is fragile. The data branch is kept small by expiring
+          # aggressively to archive/, so this stays cheap.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Pinned for reproducibility. Local development runs 3.12.
+          python-version: "3.11"
+
+      - name: Configure git identity for the data branch
+        working-directory: data-branch
+        run: |
+          git config user.name "terraview24 pipeline"
+          git config user.email "pipeline@terraview24.invalid"
+
+      - name: Write heartbeat.json and push
+        env:
+          DISPATCH_SOURCE: ${{ github.event.inputs.source }}
+          DISPATCH_SCHEDULED_FOR: ${{ github.event.inputs.scheduled_for }}
+          EXTERNAL_TIMER_ARMED: ${{ vars.EXTERNAL_TIMER_ARMED }}
+        run: python scripts/write_heartbeat.py data-branch

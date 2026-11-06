@@ -1,0 +1,82 @@
+name: ingest-atmospheric
+
+# OpenAQ, plus Sentinel-5P via Planetary Computer later.
+#
+# SHIPS INERT. The job level `if` below is false until both variables are set,
+# and a job whose `if` evaluates false provisions no runner at all, so an
+# unarmed workflow costs nothing. It still creates a skipped run record, which
+# is why the external timer only fires workflows that are actually armed.
+#
+# To arm, per ARCHITECTURE.md section 9, one family at a time:
+#   gh variable set PIPELINE_ENABLED --body true
+#   gh variable set ENABLE_ATMOSPHERIC --body true
+#
+# Cadence lives in trigger-schedule.json, the single source of truth. The cron
+# below must match it, and tests/test_trigger_alignment.py asserts that.
+# `schedule` is the slow fallback, not the cadence: measured at a 4.68 hour
+# median delay (ARCHITECTURE.md section 1a).
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Who dispatched this. A claim, not a proof."
+        required: false
+        default: manual
+        type: string
+      scheduled_for:
+        description: "ISO 8601 UTC time the dispatcher says it fired."
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "0 1 * * *"
+
+# One group per workflow. NOT a single shared data-branch-write group: a
+# concurrency group holds only one pending run, so a shared group would
+# silently drop dispatches. See ARCHITECTURE.md section 9a.
+concurrency:
+  group: ingest-atmospheric-write
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    if: vars.PIPELINE_ENABLED == 'true' && vars.ENABLE_ATMOSPHERIC == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Check out the data branch
+        uses: actions/checkout@v5
+        with:
+          ref: data
+          path: data-branch
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Not implemented yet
+        run: |
+          echo "ingest-atmospheric is armed but not implemented."
+          echo "This workflow writes only these paths, and no others:"
+          echo "  registry/atmospheric.json"
+          echo "  events/live.atmospheric.json"
+          echo "  meta.atmospheric.json"
+          echo "Per family file ownership is what makes the rebase and retry"
+          echo "push safe without a lock (ARCHITECTURE.md section 9a)."
+          exit 1

@@ -215,11 +215,11 @@ def _lag_seconds(
     """
     if scheduled_for is None:
         return None
-    return int(round((written_at - scheduled_for).total_seconds()))
+    return round((written_at - scheduled_for).total_seconds())
 
 
 def _iso(value: dt.datetime) -> str:
-    return value.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return value.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _require_utc(value: dt.datetime, name: str) -> None:

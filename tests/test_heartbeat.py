@@ -31,8 +31,8 @@ from pipeline.emit.heartbeat import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEDULE_PATH = REPO_ROOT / "trigger-schedule.json"
 
-NOW = dt.datetime(2026, 11, 6, 9, 0, 11, tzinfo=dt.timezone.utc)
-SCHEDULED = dt.datetime(2026, 11, 6, 9, 0, 0, tzinfo=dt.timezone.utc)
+NOW = dt.datetime(2026, 11, 6, 9, 0, 11, tzinfo=dt.UTC)
+SCHEDULED = dt.datetime(2026, 11, 6, 9, 0, 0, tzinfo=dt.UTC)
 
 
 @pytest.fixture

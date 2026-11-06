@@ -14,3 +14,4 @@ geopandas==1.0.1
 # Test and lint
 pytest==8.3.4
 ruff==0.8.4
+pyyaml==6.0.2

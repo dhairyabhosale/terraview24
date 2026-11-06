@@ -1,0 +1,42 @@
+[project]
+name = "terraview24"
+version = "0.1.0"
+description = "A 3D globe surfacing human caused environmental events, detected statistically against a multi year baseline"
+requires-python = ">=3.11"
+
+# One name everywhere: this package, the GitHub repo, the Vercel project, the
+# production host and the display title are all terraview24. See
+# ARCHITECTURE.md section 10 for why that rule exists and what it cost to learn.
+
+[tool.ruff]
+# Pinned to the CI interpreter, not to whatever is installed locally. Local
+# development runs 3.12; CI runs 3.11. Without this pin, ruff would suggest
+# 3.12 only idioms that then fail on the runner.
+target-version = "py311"
+line-length = 100
+extend-exclude = ["tools", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "RUF"]
+ignore = [
+  # Long lines inside comments and docstrings carry the reasoning this project
+  # depends on. The limit still applies to code.
+  "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Entrypoint scripts adjust sys.path before importing the pipeline package, so
+# imports legitimately follow executable code.
+"scripts/*.py" = ["E402"]
+# The dash checker necessarily contains every character it forbids, in its
+# FORBIDDEN table, so the ambiguous character rules cannot apply to it. The
+# check itself skips this file for the same reason.
+"scripts/check_no_dashes.py" = ["E402", "RUF001", "RUF003"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Import mode matters: the tests import the `pipeline` package from the repo
+# root, so the root must be on sys.path.
+pythonpath = ["."]
+addopts = "-q"
+

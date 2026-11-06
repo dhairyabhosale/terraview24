@@ -26,7 +26,7 @@ from pipeline.sources.gkg_coverage import (
     slice_url,
 )
 
-NOW = dt.datetime(2026, 11, 6, 5, 31, tzinfo=dt.timezone.utc)
+NOW = dt.datetime(2026, 11, 6, 5, 31, tzinfo=dt.UTC)
 
 
 def ts(**kwargs: int) -> dt.datetime:
@@ -120,10 +120,13 @@ def test_a_pending_slice_blocks_unreported_even_at_full_mature_coverage():
     so the coverage gate alone would pass it. The window is still unfinished.
     Without this gate, every window evaluated too early would assert UNREPORTED.
     """
-    outcomes = tuple(
-        SliceOutcome(ts(minutes=200 + i * GKG_SLICE_INTERVAL_MINUTES), SliceState.READ)
-        for i in range(40)
-    ) + (SliceOutcome(ts(minutes=1), SliceState.PENDING),)
+    outcomes = (
+        *(
+            SliceOutcome(ts(minutes=200 + i * GKG_SLICE_INTERVAL_MINUTES), SliceState.READ)
+            for i in range(40)
+        ),
+        SliceOutcome(ts(minutes=1), SliceState.PENDING),
+    )
     report = CoverageReport(outcomes)
 
     assert report.index_coverage_fraction == pytest.approx(1.0)
@@ -203,19 +206,19 @@ def test_the_gate_is_not_trivially_true():
 
 def test_slice_url_uses_https_and_the_observed_name_format():
     """http 301s to https://host:443/ and that redirect is not worth relying on."""
-    url = slice_url(dt.datetime(2026, 11, 6, 5, 30, tzinfo=dt.timezone.utc))
+    url = slice_url(dt.datetime(2026, 11, 6, 5, 30, tzinfo=dt.UTC))
     assert url == "https://data.gdeltproject.org/gdeltv2/20261106053000.gkg.csv.zip"
     assert url.startswith("https://")
 
 
 def test_slice_timestamps_align_to_the_fifteen_minute_grid():
-    start = dt.datetime(2026, 11, 6, 4, 7, tzinfo=dt.timezone.utc)
-    end = dt.datetime(2026, 11, 6, 5, 0, tzinfo=dt.timezone.utc)
+    start = dt.datetime(2026, 11, 6, 4, 7, tzinfo=dt.UTC)
+    end = dt.datetime(2026, 11, 6, 5, 0, tzinfo=dt.UTC)
     stamps = slice_timestamps(start, end)
     assert [s.strftime("%H%M") for s in stamps] == ["0415", "0430", "0445"]
 
 
 def test_slice_timestamps_are_empty_for_an_inverted_window():
-    start = dt.datetime(2026, 11, 6, 5, 0, tzinfo=dt.timezone.utc)
-    end = dt.datetime(2026, 11, 6, 4, 0, tzinfo=dt.timezone.utc)
+    start = dt.datetime(2026, 11, 6, 5, 0, tzinfo=dt.UTC)
+    end = dt.datetime(2026, 11, 6, 4, 0, tzinfo=dt.UTC)
     assert slice_timestamps(start, end) == []

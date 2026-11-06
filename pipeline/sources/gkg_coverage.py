@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from pipeline.detect.constants import (
     COVERAGE_MIN,
@@ -32,7 +32,7 @@ GKG_BASE_URL = "https://data.gdeltproject.org/gdeltv2"
 # follow redirects. Do not request http and treat the 301 as a failure.
 
 
-class SliceState(str, Enum):
+class SliceState(StrEnum):
     """What we know about one 15 minute GKG slice."""
 
     READ = "read"

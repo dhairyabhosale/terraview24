@@ -1,0 +1,113 @@
+name: lint-workflows
+
+# Runs actionlint on every change under .github/workflows, plus the Python
+# tests and a check for en and em dashes.
+#
+# Why actionlint rather than a YAML parse: on attempt 1 a workflow file parsed
+# cleanly under PyYAML and was rejected by GitHub Actions on every push, with
+# the single message "workflow file issue". The cause was a YAML key with only
+# a comment beneath it, which parses as null, so `env:` followed by a comment
+# is `env: null`. A parser accepts it. actionlint rejects it, which is the
+# whole point. See ARCHITECTURE.md section 9.
+#
+# This workflow has no schedule and no workflow_dispatch source input, because
+# it is not part of the pipeline and the external timer never fires it.
+
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+      - "scripts/**"
+      - "pipeline/**"
+      - "tests/**"
+      - "trigger-schedule.json"
+      - "requirements*.txt"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "scripts/**"
+      - "pipeline/**"
+      - "tests/**"
+      - "trigger-schedule.json"
+      - "requirements*.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: lint-workflows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Download pinned actionlint
+        run: bash scripts/get-actionlint.sh
+
+      - name: Lint workflows
+        run: ./tools/actionlint -color .github/workflows/*.yml
+
+      - name: Assert no CRLF in committed workflow files
+        # .gitattributes forces LF, but the point of section 9 is that a
+        # setting read back is not evidence. This observes the committed bytes.
+        run: |
+          if grep -rlU $'\r' .github/workflows/ scripts/ 2>/dev/null; then
+            echo "::error::CRLF found in the files listed above. A CRLF in a"
+            echo "::error::workflow heredoc makes bash compare against 'PY\\r'"
+            echo "::error::and never find the terminator. See ARCHITECTURE section 9."
+            exit 1
+          fi
+          echo "no CRLF in workflows or scripts"
+
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Configure git identity for the push tests
+        # tests/test_push.py drives real local git repositories, because the
+        # behaviour under test is git's own. A bare runner has no identity.
+        run: |
+          git config --global user.email "ci@terraview24.invalid"
+          git config --global user.name "terraview24 ci"
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Lint Python
+        run: python -m ruff check pipeline/ scripts/ tests/
+
+  no-dashes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Assert no en or em dashes anywhere
+        # Ground rule 8. Box drawing characters are allowed: the architecture
+        # diagrams use them and they are not dashes.
+        run: python scripts/check_no_dashes.py
