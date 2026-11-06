@@ -1,0 +1,56 @@
+name: firms-probe
+
+# TEMPORARY, delete once the answers are recorded in DATA_SOURCES.md.
+#
+# Settles three open questions that need the MAP_KEY, which lives only as a
+# GitHub secret. Running this here is the only way to use the key without it
+# ever being pasted into a chat, a shell history or a local file.
+#
+# 1. The DAY_RANGE ceiling, recorded as [unresolved] because the API page
+#    states 1 to 5 in its parameter table and then gives an example using 7.
+# 2. Whether VIIRS_NOAA20_SP exists at all. The whole Tier 0 baseline assumes
+#    it does, while the FIRMS archive readme says standard quality data is not
+#    yet available for NOAA-20.
+# 3. Which `version` string each source returns, since NASA defines a bare
+#    collection number as Standard Processing and a suffix as real time.
+#
+# workflow_dispatch only. No schedule, and the external timer does not know
+# about it, so it runs exactly when asked and never otherwise.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firms-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Probe FIRMS
+        env:
+          # The script scrubs this from everything it prints, and GitHub masks
+          # registered secrets in logs independently. Two layers, because a
+          # masked log is a property of the platform and the scrub is a
+          # property of the code.
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: python scripts/probe_firms.py

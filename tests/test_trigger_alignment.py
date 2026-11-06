@@ -28,7 +28,13 @@ SCHEDULE_PATH = REPO_ROOT / "trigger-schedule.json"
 # Workflows that are not part of the pipeline and are never dispatched by the
 # timer. Listed explicitly so a new pipeline workflow cannot be quietly
 # exempted from the checks below by forgetting to register it.
-NON_PIPELINE_WORKFLOWS = {"lint-workflows.yml"}
+NON_PIPELINE_WORKFLOWS = {
+    "lint-workflows.yml",
+    # Temporary. Answers three open questions that need the FIRMS MAP_KEY,
+    # which lives only as a GitHub secret. Deleted once recorded in
+    # DATA_SOURCES.md. Exempted explicitly, not by loosening the check.
+    "firms-probe.yml",
+}
 
 PINNED_RUNNER = "ubuntu-24.04"
 PINNED_CHECKOUT = "actions/checkout@v5"
