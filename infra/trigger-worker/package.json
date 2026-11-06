@@ -1,0 +1,15 @@
+{
+  "name": "terraview24-trigger-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker that calls workflow_dispatch, because GitHub's own scheduler was measured at a 4.68 hour median delay",
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "4.42.0"
+  }
+}

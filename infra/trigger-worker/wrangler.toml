@@ -1,0 +1,28 @@
+name = "terraview24-trigger"
+main = "src/index.ts"
+compatibility_date = "2026-11-06"
+
+# NO PUBLIC URL. A URL that can fire the pipeline is a public button for
+# running it, so the Worker gets no workers.dev address and no route. The
+# fetch handler in src/index.ts is inert as a second line of defence.
+# Confirm after `wrangler deploy` that the output shows no *.workers.dev
+# address. See ARCHITECTURE.md section 1a.
+workers_dev = false
+
+# ONE cron trigger. Which of the project's cadences are due is decided in
+# code, in src/schedule.ts and src/cron.ts, so the schedule is versioned and
+# testable rather than six entries in a dashboard that nobody can diff.
+#
+# This interval MUST equal WORKER_INTERVAL_MINUTES in src/index.ts, because
+# the due window is derived from it. test/worker.test.ts asserts that.
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+GITHUB_OWNER = "dhairyabhosale"
+GITHUB_REPO = "terraview24"
+GITHUB_REF = "main"
+
+# GITHUB_TOKEN is deliberately absent here. It is a secret, set out of band:
+#   wrangler secret put GITHUB_TOKEN
+# Fine grained PAT, Actions: write on this repo only, 90 day expiry.
