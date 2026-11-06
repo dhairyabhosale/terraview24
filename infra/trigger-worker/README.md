@@ -71,6 +71,36 @@ npx wrangler secret put GITHUB_TOKEN
 
 Paste the token at the prompt and press Enter. It is not echoed.
 
+> ### STOP if a wrangler command ever prints a `github_pat_` string
+>
+> A fine grained token starts with `github_pat_`. `wrangler secret put` never
+> echoes the value and never prints it back. So if you see a `github_pat_`
+> string anywhere in a wrangler command's output, or in your shell history, or
+> in a terminal scrollback you are about to share, **the token went into the
+> wrong field**: most likely into the secret NAME rather than its value, or
+> into a `[vars]` entry, or onto the command line as an argument.
+>
+> What to do, in this order:
+>
+> 1. **Revoke the token immediately** at
+>    https://github.com/settings/personal-access-tokens . Do not try to work out
+>    whether it was really exposed first. Revoking costs two minutes; a leaked
+>    token with Actions write can run arbitrary workflows in the repository.
+> 2. Delete the wrongly created secret or var:
+>    `npx wrangler secret delete <NAME>`, and remove any `[vars]` entry from
+>    `wrangler.toml` if one was added.
+> 3. Mint a replacement (this repo only, Actions: Read and write, 90 days) and
+>    set it again with `npx wrangler secret put GITHUB_TOKEN`, letting the
+>    prompt take the value. Never pass a secret as a command line argument: it
+>    lands in shell history and in process listings.
+> 4. Confirm the secret list shows exactly one entry named `GITHUB_TOKEN` and
+>    no value: `npx wrangler secret list`.
+>
+> The name matters as much as the value. The Worker reads `env.GITHUB_TOKEN`
+> and nothing else, so a secret stored under any other name leaves the Worker
+> with no token at all. It then logs a warning and dispatches nothing, which
+> presents as a silently stale page rather than an error.
+
 **The order is deliberate.** Deploying before the secret exists means the first
 few cron firings find no token. That is harmless: the Worker logs a warning and
 dispatches nothing, rather than throwing. It is also a useful negative test, so
