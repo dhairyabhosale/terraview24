@@ -1,19 +1,19 @@
 {
-  "dispatch_lag_seconds": 18,
-  "dispatch_scheduled_for": "2026-11-11T20:00:21Z",
+  "dispatch_lag_seconds": 15,
+  "dispatch_scheduled_for": "2026-11-11T21:00:21Z",
   "dispatch_source": "external-timer",
   "expected_cadence_minutes": 60,
   "first_unassisted_write": "2026-11-06T14:00:40Z",
-  "last_unassisted_write": "2026-11-11T20:00:39Z",
-  "run_number": 149,
+  "last_unassisted_write": "2026-11-11T21:00:36Z",
+  "run_number": 150,
   "source_commit": "c86cb74b46ee",
   "stale_after_minutes": 150,
   "trigger_mode": "external_timer",
   "triggered_by": "workflow_dispatch",
   "writes_by_trigger": {
-    "external_timer": 127,
+    "external_timer": 128,
     "manual": 1,
     "schedule": 21
   },
-  "written_at": "2026-11-11T20:00:39Z"
+  "written_at": "2026-11-11T21:00:36Z"
 }
